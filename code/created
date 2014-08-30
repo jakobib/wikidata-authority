@@ -1,14 +1,14 @@
 #!/usr/bin/env perl
-# find out when a Wikidata property was created
+# Find out when a Wikidata property or item was created
 
 use v5.14;
 use LWP::Simple qw(get);
 use JSON;
 
-foreach my $property (@ARGV) {
-    my $title = "Property:$property"; 
+foreach my $property (<>) {
+    chomp $property;
     my $url =  "http://www.wikidata.org/w/api.php?" 
-        . "action=query&prop=revisions&titles=$title"
+        . "action=query&prop=revisions&titles=Property:$property"
         . "&rvprop=timestamp&format=json&rvdir=newer&rvlimit=1";
 
     my $json = JSON->new->utf8->decode(get($url));

@@ -1,0 +1,32 @@
+#!/usr/bin/env perl
+# List all properties, sorted 
+
+use v5.14;
+use LWP::Simple qw(get);
+use JSON;
+
+my $namespace = 120; # Property:
+my $limit = 500; 
+my $continue;
+my @properties;
+
+while(1) {
+    my $url =  "http://www.wikidata.org/w/api.php?format=json" 
+            . "&action=query&list=allpages&apnamespace=$namespace"
+            . "&aplimit=$limit";
+    $url .= "&apcontinue=$continue" if $continue;
+
+    my $json = JSON->new->utf8->decode(get($url));
+
+    foreach (@{$json->{query}->{allpages}}) {
+        my $property = $_->{title};
+        $property =~ s/^Property:P//;
+        push @properties, $property;
+    }
+
+    $continue = $json->{'query-continue'}->{allpages}->{apcontinue} or last;
+}
+
+say "P$_" for sort {$a <=> $b} @properties;
+
+# TODO: redirected properties (if they exist)
