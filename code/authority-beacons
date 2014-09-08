@@ -1,0 +1,41 @@
+#!/usr/bin/env perl
+# Extract BEACON link dumps from Wikidata authority properties and statements
+
+use v5.14;
+use Catmandu -all;
+
+my %properties;
+
+# read list of authority properties
+importer('CSV', 
+    file => "data/authority-properties.csv",
+    sep_char => "\t", fields => ['id','name','url'],
+)->each(sub{
+    $properties{$_[0]->{id}} = $_[0];
+});
+
+
+# read statements from STDIN
+importer('CSV')->each(sub {
+    my $property = $properties{$_[0]->{property}} or return;
+
+    my ($id, $value) = ($_[0]->{id}, $_[0]->{value});
+
+    # TODO: use Catmandu::Exporter::BEACON
+    my $fh = $property->{beacon};
+    if (!$fh) {
+        # UTF8??
+        open $fh, ">:utf8", "data/beacon/".$property->{id}.".txt";
+        $property->{beacon} = $fh;
+        say $fh '#FORMAT: BEACON';
+        say $fh '#DESCRIPTION: Wikidata -> '.$property->{name};  
+        say $fh '#PREFIX: http://www.wikidata.org/entity/';
+        say $fh '#TARGET: ' . $property->{url}; 
+        say $fh '';
+    }
+
+    $value =~ s/\n|[|]/ /g;
+    say $fh $_[0]->{id}, '|', $_[0]->{value}; 
+});
+
+
